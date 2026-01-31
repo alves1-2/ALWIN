@@ -8,6 +8,15 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+// Handle invalid JSON body parse errors
+app.use((err, req, res, next) => {
+  if (err && err.type === 'entity.parse.failed') {
+    console.error('Bad JSON body received:', err);
+    return res.status(400).json({ error: 'Invalid JSON body' });
+  }
+  next(err);
+});
+
 // In-memory storage for users (replace with DB in production)
 let users = [];
 const MAX_USERS = Infinity; // Unlimited users
@@ -113,6 +122,20 @@ app.post('/api/pay/:userId', (req, res) => {
   // Simulate API payment integration
   console.log(`Payment of 1700 RWF received from ${user.username} to 0793758208`);
   res.json({ message: 'Payment confirmed. KWISHYURA notification sent!', user: { id: user.id, username: user.username, paymentStatus: user.paymentStatus } });
+});
+
+// Endpoint to simulate earning (watch ad/video)
+app.post('/api/earn/:userId', (req, res) => {
+  const userId = parseInt(req.params.userId);
+  const user = users.find(u => u.id === userId);
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  // Add fixed earning amount
+  const AMOUNT = 10;
+  user.earnings = (user.earnings || 0) + AMOUNT;
+  res.json({ totalEarnings: user.earnings });
 });
 
 // Start server

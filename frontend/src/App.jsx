@@ -109,6 +109,14 @@ function App() {
     }
   }
 
+  const handleLogout = () => {
+    localStorage.removeItem('user')
+    setUser(null)
+    setContent(null)
+    setMessage('')
+    setIsLogin(false)
+  }
+
   const filteredContent = content ? {
     videos: content.videos.filter(video => 
       video.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -123,7 +131,7 @@ function App() {
   if (user && content) {
     return (
       <div className="App">
-        <h1>Welcome to Onafrrique Company, {user.username}!</h1>
+        <h1>Welcome to ALWIN, {user.username}!</h1>
         <p>Your earnings: {content.earnings}</p>
         <input
           type="text"
@@ -136,20 +144,26 @@ function App() {
         <button onClick={handleLogout}>Logout</button>
         <h2>Videos</h2>
         <ul>
-          {filteredContent.videos.map(video => (
-            <li key={video.id}>
-              <h3>{video.title}</h3>
-              <iframe 
-                width="560" 
-                height="315" 
-                src={`https://www.youtube.com/embed/${video.url.split('v=')[1]}`} 
-                title={video.title}
-                frameBorder="0" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                allowFullScreen
-              ></iframe>
-            </li>
-          ))}
+          {filteredContent.videos.map(video => {
+            const url = video.url || ''
+            const id = url.includes('v=') ? url.split('v=')[1] : url.split('/').pop()
+            const embedId = id || ''
+            return (
+              <li key={video.id}>
+                <h3>{video.title}</h3>
+                <iframe 
+                  width="560" 
+                  height="315" 
+                  src={`https://www.youtube.com/embed/${embedId}`} 
+                  title={video.title}
+                  frameBorder="0" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                  allowFullScreen
+                ></iframe>
+              </li>
+            )
+          })}
+        
         </ul>
         <h2>Advertisements</h2>
         <ul>
@@ -180,7 +194,7 @@ function App() {
 
   return (
     <div className="App">
-      <h1>Onafrique Company</h1>
+      <h1>ALWIN</h1>
       <div className="auth-toggle">
         <button onClick={() => setIsLogin(false)} className={!isLogin ? 'active' : ''}>Register</button>
         <button onClick={() => setIsLogin(true)} className={isLogin ? 'active' : ''}>Login</button>
