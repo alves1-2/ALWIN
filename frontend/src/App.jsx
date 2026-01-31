@@ -7,6 +7,12 @@ function App() {
   const [registrationForm, setRegistrationForm] = useState({ email: '', phone: '', username: '' })
   const [loginForm, setLoginForm] = useState({ username: '' })
   const [message, setMessage] = useState('')
+  const [lastResponse, setLastResponse] = useState(null)
+  const [apiStatus, setApiStatus] = useState('unknown')
+  const [loadingRegister, setLoadingRegister] = useState(false)
+  const [loadingLogin, setLoadingLogin] = useState(false)
+  const [loadingPay, setLoadingPay] = useState(false)
+  const [loadingEarn, setLoadingEarn] = useState(false)
   const [showPaymentNumber, setShowPaymentNumber] = useState(false)
   const [isLogin, setIsLogin] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -17,6 +23,18 @@ function App() {
     if (savedUser) {
       setUser(JSON.parse(savedUser))
     }
+    // quick backend health check
+    ;(async () => {
+      try {
+        const res = await fetch('/api')
+        const data = await res.json()
+        setApiStatus(res.ok ? 'ok' : 'error')
+        setLastResponse(data)
+      } catch (err) {
+        setApiStatus('down')
+        setLastResponse({ error: err.message })
+      }
+    })()
   }, [])
 
   useEffect(() => {
@@ -41,6 +59,7 @@ function App() {
 
   const handleRegister = async (e) => {
     e.preventDefault()
+    setLoadingRegister(true)
     try {
       const res = await fetch('/api/register', {
         method: 'POST',
@@ -48,6 +67,7 @@ function App() {
         body: JSON.stringify(registrationForm)
       })
       const data = await res.json()
+      setLastResponse(data)
       if (res.ok) {
         setUser(data.user)
         localStorage.setItem('user', JSON.stringify(data.user))
@@ -58,10 +78,12 @@ function App() {
     } catch (error) {
       setMessage('Registration failed')
     }
+    setLoadingRegister(false)
   }
 
   const handleLogin = async (e) => {
     e.preventDefault()
+    setLoadingLogin(true)
     try {
       const res = await fetch('/api/login', {
         method: 'POST',
@@ -69,6 +91,7 @@ function App() {
         body: JSON.stringify(loginForm)
       })
       const data = await res.json()
+      setLastResponse(data)
       if (res.ok) {
         setUser(data.user)
         localStorage.setItem('user', JSON.stringify(data.user))
@@ -79,12 +102,15 @@ function App() {
     } catch (error) {
       setMessage('Login failed')
     }
+    setLoadingLogin(false)
   }
 
   const handlePay = async () => {
+    setLoadingPay(true)
     try {
       const res = await fetch(`/api/pay/${user.id}`, { method: 'POST' })
       const data = await res.json()
+      setLastResponse(data)
       if (res.ok) {
         setUser(data.user)
         localStorage.setItem('user', JSON.stringify(data.user))
@@ -94,12 +120,15 @@ function App() {
     } catch (error) {
       setMessage('Payment confirmation failed')
     }
+    setLoadingPay(false)
   }
 
   const handleEarn = async () => {
+    setLoadingEarn(true)
     try {
       const res = await fetch(`/api/earn/${user.id}`, { method: 'POST' })
       const data = await res.json()
+      setLastResponse(data)
       if (res.ok) {
         setContent(prev => ({ ...prev, earnings: data.totalEarnings }))
         setMessage('Earned 10!')
@@ -107,6 +136,7 @@ function App() {
     } catch (error) {
       setMessage('Failed to earn')
     }
+    setLoadingEarn(false)
   }
 
   const handleLogout = () => {
@@ -140,7 +170,7 @@ function App() {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="search-bar"
         />
-        <button onClick={handleEarn}>Watch Ad/Video to Earn</button>
+        <button onClick={handleEarn} disabled={loadingEarn}>{loadingEarn ? 'Earning...' : 'Watch Ad/Video to Earn'}</button>
         <button onClick={handleLogout}>Logout</button>
         <h2>Videos</h2>
         <ul>
@@ -172,6 +202,13 @@ function App() {
           ))}
         </ul>
         {message && <p>{message}</p>}
+        <div className="debug-panel">
+          <h3>API status: {apiStatus}</h3>
+          <details>
+            <summary>Last API response (debug)</summary>
+            <pre style={{maxHeight: 300, overflow: 'auto'}}>{JSON.stringify(lastResponse, null, 2)}</pre>
+          </details>
+        </div>
       </div>
     )
   }
@@ -188,6 +225,13 @@ function App() {
         <button onClick={handlePay}>I Have Paid - Confirm</button>
         <button onClick={handleLogout}>Logout</button>
         {message && <div className="notification">{message}</div>}
+        <div className="debug-panel">
+          <h3>API status: {apiStatus}</h3>
+          <details>
+            <summary>Last API response (debug)</summary>
+            <pre style={{maxHeight: 300, overflow: 'auto'}}>{JSON.stringify(lastResponse, null, 2)}</pre>
+          </details>
+        </div>
       </div>
     )
   }
@@ -237,6 +281,13 @@ function App() {
         </form>
       )}
       {message && <p>{message}</p>}
+      <div className="debug-panel">
+        <h3>API status: {apiStatus}</h3>
+        <details>
+          <summary>Last API response (debug)</summary>
+          <pre style={{maxHeight: 300, overflow: 'auto'}}>{JSON.stringify(lastResponse, null, 2)}</pre>
+        </details>
+      </div>
     </div>
   )
 }
